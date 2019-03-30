@@ -33,7 +33,7 @@ library(gridExtra)
 library(GoFKernel)
 ```
 
-El código para esta entrega puede encontrarse haciendo click [aquí](https://github.com/daczarne/ENP_entrega4).
+El código para esta entrega puede encontrarse haciendo click [aquí](https://github.com/daczarne/ENP/tree/master/Entrega4).
 
 # Ejercicio 1
 

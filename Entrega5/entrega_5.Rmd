@@ -33,7 +33,7 @@ library(gridExtra)
 library(FNN)
 ```
 
-El código para esta entrega puede encontrarse haciendo click [aquí](https://github.com/daczarne/ENP_entrega5).
+El código para esta entrega puede encontrarse haciendo click [aquí](https://github.com/daczarne/ENP/tree/master/Entrega5).
 
 # Ejercicio 1
 

@@ -28,7 +28,7 @@ library(magrittr)
 library(goftest)
 ```
 
-\noindent El código de esta entrega puede encontrarse en un repositorio de Github haciendo click [aquí](https://github.com/daczarne/ENP_entrega2).
+\noindent El código de esta entrega puede encontrarse en un repositorio de Github haciendo click [aquí](https://github.com/daczarne/ENP/tree/master/Entrega2).
 
 # Reproducir figura 2.1
 

@@ -26,7 +26,7 @@ library(ggthemes)
 library(pwr)
 ```
 
-El código de esta entrega puede encontrarse en el siguiente [repositorio de Github](https://github.com/daczarne/ENP_entrega1).
+El código de esta entrega puede encontrarse en el siguiente [repositorio de Github](https://github.com/daczarne/ENP/tree/master/Entrega1).
 
 # Ejercicio 2.1
 

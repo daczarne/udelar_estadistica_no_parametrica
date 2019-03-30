@@ -1,0 +1,315 @@
+---
+title: "Corrección de sesgo de borde"
+author: "Lucia Coudet - Daniel Czarnievicz"
+date: "Octubre de 2018"
+output:
+  beamer_presentation:
+    slide_level: 2
+    toc: true
+    theme: "Frankfurt"
+    colortheme: "default"
+    fonttheme: "structurebold"
+bibliography: References.bib
+biblio-style: plain
+nocite: |
+   @RSLang, @bdepack |
+   @tidyverse, @ivanka2012kernel, @scott2015multivariate
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gridExtra)
+library(kableExtra)
+library(magrittr)
+```
+
+# Motivación
+
+## Motivación
+
+Supongamos que necesitamos estimar la densidad, mediante métodos kernel, de una muestra proveniente de una distribución exponencial $X \sim Exp(\theta)$ con esperanza $\theta^{-1}$.
+
+## Motivación
+
+```{r, echo=FALSE, fig.cap="Densidad exponencial (violeta) y estimación kernel (gaussiano) de la misma (verde).", out.width="80%"}
+theta <- 1
+set.seed(1234)
+datos <- c(0, rexp(100, rate=theta))
+as_tibble(datos) %>%
+   ggplot() +
+   geom_area(aes(value), stat="function", fun=dexp, alpha=0.3, color="navy", fill="navy") +
+   geom_density(aes(value), color="darkgreen", fill="darkgreen", alpha=0.3) + 
+   geom_line(aes(datos, dexp(datos, rate=theta)), color="navy") +
+   labs(x=NULL, y="Densidades") +
+   xlim(c(-2,5)) +
+   theme(axis.ticks=element_blank())
+```
+
+## Motivación
+
+Como puede observarse en la `Figura 1` el kernel gaussiano no estima de forma desable la densidad en y cerca del borde $x = 0$.
+
+Esto se debe a que la estimación kernel supone que se cumplen ciertas \textbf{condiciones de suavidad} sobre toda la recta real, lo cual no se cumple para el caso de la densidad exponencial, cuya derivada primera contiene un punto de discontinuidad en $x = 0$.
+
+# Sesgo de borde
+
+## Sesgo de borde
+
+Supongamos que $f$ tiene dos derivadas continuas en todo su recorrido y que $n \to \infty$, $h \to 0$ y $nh \to \infty$. Entonces, 
+
+\textbf{En el interior del soporte:}
+
+$$ E(\hat{f}(x)) \approx f(x) + \frac{1}{2} h^2 \int u^2 K(u) du \, \, f^{''}(x) = f(x) + O(h^2)  $$
+\textbf{En y cerca del borde:}
+
+$$ E(\hat{f}(x)) \approx a_0(p)f(x) - ha_1(p)f^{'}(x) + \frac{1}{2} h^2 a_2(p) f^{''}(x) $$
+donde $x=ph$, $a_i(p) = \int\limits_{-\infty}^p u^i K(u) du$, $i=1, \ldots, 3$.
+
+## Sesgo de borde
+
+\textbf{\underline{Sesgo en el interior del soporte}}
+
+Lejos del borde, lo cual significa que $x \geq h$, no hay superposición de los kernels que contribuyen a la estimación de la densidad con el borde mismo, por lo tanto, la expresión usual para la media asintótica aplica. Si suponemos que $f$ tiene deriavas primera y segunda contínuas en todo el soporte, y que $n \to \infty$, $h=h(n) \to 0$, y $nh \to \infty$, entonces: 
+
+$$\hat{f}(x)= \frac{1}{nh}\sum\limits_{i=1}^n K\Big(\frac{x-X_i}{h}\Big)=\frac{1}{n}\sum\limits_{i=1}^n K_h(x-X_i)$$
+
+Por lo tanto:
+
+$$E(\hat{f}(x))=E\left(\frac{1}{n}\sum\limits_{i=1}^n K_h(x-y)\right)=\frac{n}{n} E(K_h(x-y))= E(K_h(x-X_i))$$
+
+## Sesgo de borde
+
+Dado que el kernel es una función de la variable aleatoria $y$:
+
+$$E(K_h(x-y)) = \int K_h(x-y)f(y)dy = \int \frac{1}{h} K\bigg(\frac{x-y}{h}\bigg)f(y)dy$$
+
+Cambio de variable: $\frac{x-y}{h} = u$ 
+
+$$\int \frac{1}{h} K \bigg(\frac{x-y}{h}\bigg)f(y)dy =  \int K(u)f(x-uh)du$$
+
+## Sesgo de borde
+
+Desarrollo de taylor de orden 2 en $f(x-uh)$:
+
+$$f(x-uh) = f(x) \, + \, f^{'}(x)(x-uh-x) \, + \, f^{''}(x)\frac{(x-uh-x)^2}{2!} \, + \, o(h^2) =$$
+$$= f(x) \, - \, uhf^{'}(x) \, + \, \frac{(hu)^2}{2}f^{''}(x) \, + \, o(h^2)$$
+
+Por lo tanto:
+
+$$\int K(u)f(x-uh)du = \int K(u) \bigg[f(x) \, - \, uh f^{'}(x) \, + \, \frac{(uh)^2}{2!} f^{''}(x) \, + \, o(h^2)\bigg]du =$$
+
+## Sesgo de borde
+
+Aplicando distributiva
+
+$$= f(x)\int K(u)du \, - \, f^{'}(x)h \int uK(u)du \, + \, \frac{h^2}{2}f^{''}(x)\int u^2K(u)du \, +$$
+$$+ \, o(h^2)\int k(u)du$$
+
+Si se cumple que:
+
+- $\int K(u)du = 1$
+- $\int uK(u)du = 0$
+ 
+ $$E(\hat{f}(x)) = f(x) \, + \, \frac{h^2}{2}f^{''}(x)\int u^2K(u)du \, + \, o(h^2)$$
+ 
+## Sesgo de borde
+
+Entonces tenemos que:
+ 
+$$sesgo(\hat{f}(x)) = f(x) \, + \, \frac{h^2}{2}f^{''}(x)\int u^2K(u)du \, + \, o(h^2) \, - \, f(x)$$
+ 
+$$\boxed{sesgo(\hat{f}(x)) \approx  \frac{h^2}{2}f^{''}(x)\int u^2K(u)du}$$
+
+## Sesgo de borde
+
+\textbf{\underline{Sesgo en y cerca del borde}} 
+
+En y cerca del borde, el problema viene dado porque se estima masa de probabilidad fuera del mismo. Es decir, se da una pérdida de masa de probabilidad. 
+ 
+Suponiendo (sin pérdida de generalidad) que el soporte de $f$ es $[0, \infty$) y tomando $x=ph$, donde $0<p<1$ (observe que si $p>1$ se está en un punto lejos del borde por lo cual se está en el interior del soporte), entonces hay que prestar atención a los límites de la integral:
+
+$$E(\hat{f}(x)) = \int\limits_{- \infty}^p K(z)f(x-hz)dz$$
+
+## Sesgo de borde
+
+Aplicando desarrollo de Taylor para $f(x-hz)$, ahora $\int\limits_{-\infty}^p K(z)dz \neq 1$ por lo que la $f(x)$ queda ponderada por un término $\neq 1$. No se logra entonces una estimación consistente en los puntos cerca y en el borde.
+
+$$E(\hat{f}(x)) = f(x) \int\limits_{- \infty}^p K(u)du + o(1)$$
+
+## Sesgo de borde
+
+Si aplicamos desarrollo de orden 2 obtenemos la expresión presentada anteriormente:
+
+$$ E(\hat{f}(x)) = \int\limits_{- \infty}^p K(u) \bigg[f(x) \, - \, f^{'}(x)(uh) \, + \, f^{''}(x)\frac{(uh)^2}{2!} \, + \, o(h^2)\bigg]du \, = $$
+
+$$ \approx  f(x)\underbrace{\int\limits_{- \infty}^p K(u)du}_{a_0(p)} \, + \, f^{'}(x)h \underbrace{\int\limits_{- \infty}^p uK(u)du}_{a_1(p)} \, + \,  \frac{h^2}{2}f^{''}(x)\underbrace{\int\limits_{- \infty}^p u^2K(u)du}_{a_2(p)} $$
+
+
+## Sesgo de borde
+
+Por lo tanto:
+
+$$E(\hat{f}(x)) \approx a_0(p)f(x) \, - \, ha_1(p)f^{'}(x) \, + \, \frac{1}{2}h^2a_2(p)f^{''}(x)$$
+
+Siendo el sesgo:
+
+$$\boxed{sesgo(\hat{f}(x)) \approx a_0(p)f(x) \, - \, ha_1(p)f^{'}(x) \, + \, \frac{1}{2}h^2a_2(p)f^{''}(x) - f(x)}$$  
+
+## Corrección del sesgo de borde
+
+Como puede observarse en la expresión aproximada para la esperanza, en y cerca del borde existe una pérdida de masa de probabilidad más allá del mismo.
+
+Una primera opción para corregir este problema es simplemente truncar la estimación al intervalo $[0, \infty)$, lo cual resulta inapropiado ya que no corrige el problema del sesgo, incluso si se trunca y se renormaliza $\hat{f}$ para que integre 1.
+
+Existen varios métodos que tratan de corregirlo, algunos de ellos son:
+
+- Mirroring  
+- Jackknife generalizado  
+- Linear multiples, local linear regression, and local linear density estimation, entre otros.
+
+# Mirroring
+
+## Mirroring
+
+El método mirroring se basa en reubicar la masa de probabilidad perdida (más allá del borde) \textit{reflejando} la misma en el borde. Esto es, utilizar:
+
+$$ \hat{f}_R(x) = \hat{f}(x) + \hat{f}(-x) $$
+
+o equivalentemente reemplazar el kernel $K_h (x - X_i)$ por 
+
+$$K_h(x-X_i) + K_h(-x-X_i)$$
+
+De esta forma se recupera la consistencia del estimador:
+
+$$ E\big[\hat{f}_R(x)\big] \approx f(x) - h2[a_1(p) + p(1-a_o(p))]f^{'}(p) $$
+
+## Mirroring 
+
+\textbf{\underline{Velocidad de convergencia}}
+
+El sesgo anterior es una $O(h)$. Existen alternativas que permiten obtener un sesgo $O(h^2)$ tanto cerca del borde como al interior.
+
+Una alternativa es usar el método \textit{jackknifing} generalizado.
+
+# Generalized jackknifing
+
+## Generalized jackknifing
+
+\textbf{\underline{Metodología}}
+
+Tomar una combinación lineal de $K$ (el kernel) y una función $L$, relacionada a $K$, de tal forma que el kernel resultante tenga las siguientes propiedades:
+
+- $a_0(p)=1$
+- $a_1(p)=0$
+
+Sean $c_l(p)= \int\limits_{- \infty}^p u^lL(u)du$, @jones1993simple demuestra que la combinación lineal
+
+$$ \frac{c_1(p)K(x) - a_1(p)L(x)}{c_1(p)a_0(p) - a_1(p)c_0(p)} $$
+
+tiene sesgo $O(h^2)$
+
+## Generalized jackknifing
+
+En particular, @john1984boundary propone utilizar $L(x)=cK(cx)$ lo cual implica trabajar con una combinación lineal que utiliza un solo kernel, $K$, y dos anchos de banda, $h$ y $ch$, con $0<c<1$.
+
+De este modo, se obtiene el siguiente kernel de borde:
+$$ K_c(x) = \frac{\big[a_1(pc) - a_1(c)\big]K(x) - a_1(p)c^2K(cx)}{ \big[a_1(pc) - a_1(c)\big]a_0(p) - a_1(p)c\big[a_0(pc) + a_0(c) - 1\big] }$$
+El cual constituye una familia de kernels según el valor de $c$ considerado.
+
+
+## Generalized jackknifing
+
+En el caso particular en que se combinen las funciones $K(x)$ y $xK(x)$ el kernel resultante es:
+
+$$ K_L(x) = \frac{a_2(p) - a_1(p)x}{a_0(p)a_2(p) - a_1^2(p)} K(x) $$
+lo cual implica asignarle un sistema de pesos al kernel selccionado.
+
+Otra opción es considerar la derivada primera del kernel seleccionado, lo cual implica imponer condiciones de suavidad. Se obtiene el siguiente kernel:
+
+$$K_D(x) = \frac{ a_1^{'}(p)K(x) - a_1(p) K^{'}(x) }{a_1^{'}(p)a_0(p) - a_1(p)a_o^{'}(p)}$$
+
+## Generalized jackknifing - Mirroring
+
+Dado que el método mirroring alcanzan un sesgo de orden $h$, es posible combinarlo con el método de \textit{jackknifing} para alcanzar un sesgo de orden $h^2$ en todo el recorrido.
+
+Esto se logra combinando $K(x)$ y $K(2p-x)$ de forma tal que la estimación de la función de densidad utiliza el siguiente kernel:
+
+$$K_{R1}(x) = \frac{2p\big[1-a_0(p) + a_1(p)\big] K(x) - a_1(p)K(2p-x)}{\big[2p(1-a_0(p)) + a_1(p)\big] a_0(p) - a_1(p)(1-a_0(p))}$$
+
+## Sesgo de borde
+
+@jones1993simple demuestra que el sesgo es $\frac{1}{2}h^2f^{''}(x)B(p)$ donde:
+
+$$ B(p)= \frac{c_1(p)a_2(p) - a_1(p)c_2(p)}{c_1(p)a_0(p) - a_1(p) c_0(p)} $$
+
+el cual es una $O(h^{2})$, propiedad que se deseaba alcanzar.
+
+<!---
+# Linear multiples, local linear regression, and local linear density estimation
+
+## Kernel weighted local linear regresssion
+
+De todos los estimadores jackknives considerados, el más popular en la literatura es el múltiplo lineal de K.
+
+Hart y Wehrly (1992) proponen utilizar el $K_L$ en un contexto de regresión local. El caso de regresión lineal local se destaca por presentar un buen desempeño en el borde. 
+
+El procedimiento se trata de encontrar los valores $\alpha$ y $\beta$ que minimizan, para cada $x$, la siguiente integral:
+
+$$ \int K_h(x-\mu)(F_n(u) - \alpha - \beta(x-\mu))^2 du$$
+
+## Kernel weighted local linear regresssion
+
+Luego, se toma $\tilde{F}(x)$ como el valor que minimiza $\alpha(x)$. Para estimaf $f$ se tienen dos opciones:
+
+-  Tomar la derivada de $\tilde{F}$ con respecto a x-
+-  Minimizar $\int K_h(x-\mu)(f_n(u) - \alpha - \beta(x-\mu))^2du$ con función de denidad estimada $f_n(x) = n^{-1}\sum\limits_{i=1}^n \delta(x-X_i)$ donde $\delta$ una función Dirac Delta.
+--->
+
+# Ejemplo en R
+
+## Implementación de $K_L$
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library(bde)
+kernel <- jonesCorrectionMuller94BoundaryKernel(
+   dataPoints = datos, mu = 2, # mu: biweight kernel
+   lower.limit = 0, upper.limit = 5)
+kernel <- ggplot_build(
+   gplot(kernel, show = FALSE, 
+         includePoints = FALSE))$data[[1]]
+as_tibble(kernel) %>% 
+   dplyr::select(x, y) %>%
+   ggplot() +
+   geom_area(aes(x), stat="function", fun=dexp, 
+             alpha=0.3, color="navy", fill="navy") +
+   geom_area(aes(x, y), color="darkgreen", 
+             fill="darkgreen", alpha=0.3) +
+   labs(x=NULL, y="Densidades") +
+   theme(axis.ticks=element_blank())
+```
+
+## Implementación de $K_L$
+
+```{r, fig.cap = 'Densidad exponencial (violeta) y estimación utilizando $K_L$ (verde).', warning=FALSE, message=FALSE, echo=FALSE, out.width='80%'}
+library(bde)
+kernel <- jonesCorrectionMuller94BoundaryKernel(
+   dataPoints = datos, mu = 2,
+   lower.limit = 0, upper.limit = 5)
+kernel <- ggplot_build(
+   gplot(kernel, show = FALSE, 
+         includePoints = FALSE))$data[[1]]
+as_tibble(kernel) %>% 
+   dplyr::select(x, y) %>%
+   ggplot() +
+   geom_area(aes(x), stat="function", fun=dexp, 
+             alpha=0.3, color="navy", fill="navy") +
+   geom_area(aes(x, y), color="darkgreen", 
+             fill="darkgreen", alpha=0.3) +
+   labs(x=NULL, y="Densidades") +
+   theme(axis.ticks=element_blank())
+```
+
+# Referencias
+
+## Referencias

@@ -2,7 +2,6 @@
 Trabajos para el curso de Estadística no Paramétrica  
 IESTA - FCEA - Udelar  
 Edición 2018  
-Coautora [@lcoudet](https://github.com/lcoudet)
 
 ## Entregas
 

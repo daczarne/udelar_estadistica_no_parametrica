@@ -1,4 +1,7 @@
-# ENP ![archived](https://img.shields.io/badge/lifecycle-archived-red.svg)
+# ENP 
+
+![archived](https://img.shields.io/badge/lifecycle-archived-red.svg)
+
 Trabajos para el curso de Estadística no Paramétrica  
 IESTA - FCEA - Udelar  
 Edición 2018  

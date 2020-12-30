@@ -1,2 +1,5 @@
 *.Rmd linguist-detectable
 *.md linguist-detectable
+*.md linguist-documentation=false
+*.yml linguist-detectable
+*.yml linguist-vendored=false

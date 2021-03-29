@@ -2,11 +2,6 @@
 
 ![archived](https://img.shields.io/badge/lifecycle-archived-red.svg)
 
-![languages](https://img.shields.io/github/languages/count/daczarne/udelar_estadistica_no_parametrica)
-![top language](https://img.shields.io/github/languages/top/daczarne/udelar_estadistica_no_parametrica)
-
-![repo size](https://img.shields.io/github/repo-size/daczarne/udelar_estadistica_no_parametrica)
-![code size](https://img.shields.io/github/languages/code-size/daczarne/udelar_estadistica_no_parametrica)
 
 Trabajos para el curso de Estadística no Paramétrica  
 IESTA - FCEA - Udelar  
